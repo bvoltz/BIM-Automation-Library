@@ -1,0 +1,16 @@
+from Autodesk.Revit.DB import *
+from Autodesk.Revit.UI import TaskDialog
+
+# Get the current open sample project file
+doc = __revit__.ActiveUIDocument.Document
+
+# Build a collector to look for all physical door instances
+door_collector = FilteredElementCollector(doc) \
+                    .OfCategory(BuiltInCategory.OST_Doors) \
+                    .WhereElementIsNotElementType()
+
+# Count the items found
+door_count = door_collector.GetElementCount()
+
+# Throw an alert window in Revit with the final data
+TaskDialog.Show("BIM Audit Result", "Audit Complete!\nThis project contains " + str(door_count) + " doors.")
