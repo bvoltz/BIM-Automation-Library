@@ -1,0 +1,31 @@
+from Autodesk.Revit.DB import *
+from Autodesk.Revit.UI import TaskDialog
+
+doc = __revit__.ActiveUIDocument.Document
+
+# 1. Collect all the physical doors
+doors = FilteredElementCollector(doc) \
+            .OfCategory(BuiltInCategory.OST_Doors) \
+            .WhereElementIsNotElementType()
+
+# 2. Start a Transaction to allow data modification
+t = Transaction(doc, "Clean Door Comments")
+t.Start()
+
+modified_count = 0
+
+# 3. Loop through every single door and update its parameter
+for door in doors:
+    # Find the specific parameter named "Comments"
+    comments_param = door.LookupParameter("Comments")
+    
+    if comments_param and not comments_param.IsReadOnly:
+        # Set the text value of the parameter
+        comments_param.Set("AUDITED BY PYTHON")
+        modified_count += 1
+
+# 4. Commit (save) the changes to the Revit file
+t.Commit()
+
+# 5. Alert the user
+TaskDialog.Show("Success", "Cleaned up " + str(modified_count) + " door parameters!")
