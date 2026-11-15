@@ -42,3 +42,52 @@ create policy "Users can delete their models" on revit_models
 for delete
 to authenticated
 using ( (select auth.uid()) = owner_id );
+
+
+-- Step 6C-0: Remove dev-only anonymous storage policies
+-- These let anyone with the publishable key read, upload and overwrite files.
+-- Policies add access, so they must be removed before strict policies mean anything.
+drop policy if exists "allow_select_dev" on storage.objects;
+drop policy if exists "allow_update_dev" on storage.objects;
+drop policy if exists "allow_upload_dev" on storage.objects;
+
+
+--- Step 6C-1: Add a new policy that allows users to read their own files
+create policy "Users can upload their own files" on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'revit-files'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
+
+--- Step 6C-2: Add a new policy that allows users to view their own files
+create policy "Users can view their own files" on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'revit-files'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
+
+--- Step 6C-3: Add a new policy that allows users to update their own files
+create policy "Users can update their own files" on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'revit-files'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+)
+with check (
+  bucket_id = 'revit-files'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
+
+--- Step 6C-4: Add a new policy that allows users to delete their own files
+create policy "Users can delete their own files" on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'revit-files'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
